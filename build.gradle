@@ -1,0 +1,61 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '3.3.2'
+	id 'io.spring.dependency-management' version '1.1.6'
+}
+
+java {
+	sourceCompatibility = JavaVersion.VERSION_17
+	targetCompatibility = JavaVersion.VERSION_17
+
+
+group = 'com.emazon'
+version = '0.0.1-SNAPSHOT'
+
+}
+
+repositories {
+	mavenCentral()
+	maven { url 'https://repo.spring.io/release' }
+	maven { url 'https://jcenter.bintray.com/' }
+}
+
+
+
+dependencies {
+	implementation 'org.apache.httpcomponents:httpclient:4.5.13'
+	implementation 'org.springframework.boot:spring-boot-starter'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.postgresql:postgresql:42.7.3'
+	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.0'
+	runtimeOnly 'org.postgresql:postgresql'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'org.mapstruct:mapstruct:1.5.3.Final'
+	implementation 'io.jsonwebtoken:jjwt:0.9.1'
+	annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.3.Final'
+	annotationProcessor 'org.projectlombok:lombok'
+	compileOnly 'org.projectlombok:lombok'
+
+
+
+	// Dependencia de PostgreSQL (reemplaza MySQL si usas PostgreSQL)
+	runtimeOnly 'org.postgresql:postgresql'
+
+	// Dependencias para pruebas
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'org.springframework.security:spring-security-test'
+	testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.2'
+	testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.2'
+	testImplementation 'org.mockito:mockito-junit-jupiter'
+	testImplementation 'com.h2database:h2'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+}
+
+
+test {
+		useJUnitPlatform()
+	}	systemProperty 'spring.main.allow-bean-definition-overriding', 'true'
