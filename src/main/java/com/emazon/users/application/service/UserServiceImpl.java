@@ -4,6 +4,7 @@ import com.emazon.users.application.dto.UserDTO;
 import com.emazon.users.domain.exception.UserAlreadyExistsException;
 import com.emazon.users.domain.model.User;
 import com.emazon.users.domain.model.Role;
+import com.emazon.users.domain.repository.RoleRepository;
 import com.emazon.users.domain.repository.UserRepository;
 import com.emazon.users.application.mapper.UserMapper;
 import jakarta.validation.ValidationException;
@@ -17,15 +18,17 @@ import java.time.LocalDate;
 public class UserServiceImpl extends UserService {
 
     private final UserRepository userRepository;
-    private final BCryptPasswordEncoder passwordEncoder;
+    private final BCryptPasswordEncoder bCryptPasswordEncoder;
     private final UserMapper userMapper;
+    private final RoleRepository roleRepository;
 
     @Autowired
-    public UserServiceImpl(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder, UserMapper userMapper) {
-        super(userRepository, passwordEncoder, userMapper);
+    public UserServiceImpl(UserRepository userRepository, BCryptPasswordEncoder bCryptPasswordEncoder, UserMapper userMapper, RoleRepository roleRepository) {
+        super(userRepository, bCryptPasswordEncoder, userMapper);
         this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
+        this.bCryptPasswordEncoder = bCryptPasswordEncoder;
         this.userMapper = userMapper;
+        this.roleRepository = roleRepository;
     }
 
     @Override
@@ -39,7 +42,7 @@ public class UserServiceImpl extends UserService {
 
         User user = userMapper.toEntity(userDTO);
         user.setRole(role);
-        user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
+        user.setPassword(bCryptPasswordEncoder.encode(userDTO.getPassword()));
 
         User savedUser = userRepository.save(user);
 
@@ -58,12 +61,17 @@ public class UserServiceImpl extends UserService {
 
         validateUser(userDTO);
 
+        // Aquí obtenemos el rol del usuario, asegurándonos de que no sea nulo
+        Role role = roleRepository.findById(userDTO.getRoleId()).orElseThrow(() -> new ValidationException("Rol no encontrado."));
+
         User user = userMapper.toEntity(userDTO);
-        user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
+        user.setRole(role);  // Asegúrate de asignar el rol al usuario
+        user.setPassword(bCryptPasswordEncoder.encode(userDTO.getPassword()));
 
         user = userRepository.save(user);
         return userMapper.toDTO(user);
     }
+
 
 
     private void validateUser(UserDTO userDTO) {

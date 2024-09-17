@@ -38,7 +38,7 @@ public class User {
     private String password;
 
     @Setter
-    @ManyToOne(cascade = CascadeType.PERSIST)
+    @ManyToOne(cascade = {CascadeType.MERGE})
     @JoinColumn(name = "id_rol", nullable = false)
     private Role role;
 

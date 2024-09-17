@@ -30,10 +30,8 @@ public abstract class UserService {
     }
 
     public UserDTO createUser(UserDTO userDTO) {
-        // Validar el usuario
         validateUser(userDTO);
 
-        // Verificar si el usuario ya existe por correo electrónico o documento de identidad
         if (userRepository.findByEmail(userDTO.getEmail()).isPresent()) {
             throw new UserAlreadyExistsException("The user already exists with this email.");
         }
@@ -42,39 +40,26 @@ public abstract class UserService {
             throw new UserAlreadyExistsException("The user already exists with this document ID.");
         }
 
-        // Mapear el DTO a la entidad User
         User user = userMapper.toEntity(userDTO);
-
-        // Encriptar la contraseña
         user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
-
-        // Guardar el usuario en la base de datos
         user = userRepository.save(user);
 
-        // Mapear la entidad User a DTO
         return userMapper.toDTO(user);
     }
 
     public UserDTO createAuxBodegaUser(UserDTO userDTO) {
-        // Validar que el usuario sea mayor de 18 años
         if (isOfLegalAge(userDTO.getBirthDate())) {
-            throw new IllegalArgumentException("User must be at least 18 years old.");
+            throw new ValidationException("User must be at least 18 years old.");
         }
 
-        // Crear el rol "Aux_Bodega"
-        Role role = new Role("Aux_Bodega", "Description of the role");
+        Role role = new Role("Aux_Bodega", "Auxiliary warehouse role");
 
-        // Mapear el DTO a la entidad User
         User user = userMapper.toEntity(userDTO);
         user.setRole(role);
-
-        // Encriptar la contraseña
         user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
 
-        // Guardar el usuario
         User savedUser = userRepository.save(user);
 
-        // Mapear la entidad guardada a DTO y devolverla
         return userMapper.toDTO(savedUser);
     }
 
@@ -118,7 +103,7 @@ public abstract class UserService {
     }
 
     private boolean isOfLegalAge(LocalDate birthDate) {
-        return Period.between(birthDate, LocalDate.now()).getYears() < 18;
+        return Period.between(birthDate, LocalDate.now()).getYears() >= 18;
     }
 
     protected abstract UserRepository getUserRepository();

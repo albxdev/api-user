@@ -1,5 +1,6 @@
 package com.emazon.users.application.service;
 
+import com.emazon.users.domain.repository.RoleRepository;
 import com.emazon.users.application.dto.UserDTO;
 import com.emazon.users.domain.exception.UserAlreadyExistsException;
 import com.emazon.users.domain.model.Role;
@@ -31,6 +32,9 @@ class UserServiceTest {
     @Mock
     private BCryptPasswordEncoder bCryptPasswordEncoder;
 
+    @Mock
+    private RoleRepository roleRepository; // Agregado para RoleRepository
+
     @InjectMocks
     private UserServiceImpl userService;
 
@@ -56,7 +60,7 @@ class UserServiceTest {
         User user = new User();
         user.setEmail("test@example.com");
         Role role = new Role();
-        role.setId(2L);
+        role.setId(30L);
         role.setName("Aux_Bodega");
         role.setDescription("Auxiliary Warehouse");
         user.setRole(role);
@@ -68,16 +72,15 @@ class UserServiceTest {
         when(userMapper.toEntity(any(UserDTO.class))).thenReturn(user);
         when(userRepository.save(any(User.class))).thenReturn(user);
         when(userMapper.toDTO(any(User.class))).thenReturn(userDTO);
+        when(roleRepository.findById(any())).thenReturn(Optional.of(role)); // Mock RoleRepository
 
         // Execute method
         UserDTO createdUser = userService.createUser(userDTO);
-
         // Verifications
         assertNotNull(createdUser);
         assertEquals("test@example.com", createdUser.getEmail());
         assertEquals("Test Name", createdUser.getName());
     }
-
 
     @Test
     void testCreateUserFailure_UserAlreadyExists() {

@@ -21,14 +21,14 @@ public class AppConfig {
     private final UserService userService;
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
-    private final BCryptPasswordEncoder passwordEncoder;
+    private final BCryptPasswordEncoder bCryptPasswordEncoder;
 
     @Autowired
-    public AppConfig(UserService userService, RoleRepository roleRepository, UserRepository userRepository, BCryptPasswordEncoder passwordEncoder) {
+    public AppConfig(UserService userService, RoleRepository roleRepository, UserRepository userRepository, BCryptPasswordEncoder bCryptPasswordEncoder) {
         this.userService = userService;
         this.roleRepository = roleRepository;
         this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
+        this.bCryptPasswordEncoder = bCryptPasswordEncoder;
     }
 
     @PostConstruct
@@ -50,7 +50,7 @@ public class AppConfig {
             adminUser.setName("admin");
             adminUser.setLastName("AdminLastName");
             adminUser.setEmail("admin@example.com");
-            adminUser.setPassword(passwordEncoder.encode("password")); // Asegúrate de que la contraseña esté codificada correctamente
+            adminUser.setPassword(bCryptPasswordEncoder.encode("password")); // Asegúrate de que la contraseña esté codificada correctamente
             adminUser.setDocumentId("documentId123");
             adminUser.setPhone("1234567890");
             adminUser.setDateOfBirth(LocalDate.of(2000, 1, 1));
