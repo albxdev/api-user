@@ -1,6 +1,8 @@
 package com.emazon.users.application.service;
 
 import com.emazon.users.application.dto.UserDTO;
+import com.emazon.users.domain.exception.EmailAlreadyExistsException;
+import com.emazon.users.domain.exception.InvalidInputException;
 import com.emazon.users.domain.exception.UserAlreadyExistsException;
 import com.emazon.users.domain.model.User;
 import com.emazon.users.domain.model.Role;
@@ -9,12 +11,14 @@ import com.emazon.users.domain.repository.UserRepository;
 import com.emazon.users.application.mapper.UserMapper;
 import jakarta.validation.ValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Primary;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 
 @Service
+@Primary
 public class UserServiceImpl extends UserService {
 
     private final UserRepository userRepository;
@@ -33,8 +37,12 @@ public class UserServiceImpl extends UserService {
 
     @Override
     public UserDTO createAuxBodegaUser(UserDTO userDTO) {
-        if (userDTO.getBirthDate().isAfter(LocalDate.now().minusYears(18))) {
+        if (userDTO.getBirthDate() == null || userDTO.getBirthDate().isAfter(LocalDate.now().minusYears(18))) {
             throw new ValidationException("El usuario debe ser mayor de edad.");
+        }
+
+        if (userRepository.findByEmail(userDTO.getEmail()).isPresent()) {
+            throw new UserAlreadyExistsException("El usuario ya existe con este correo.");
         }
 
         // Crear rol "Aux_Bodega"
@@ -49,14 +57,19 @@ public class UserServiceImpl extends UserService {
         return userMapper.toDTO(savedUser);
     }
 
+
     @Override
     public UserDTO createUser(UserDTO userDTO) {
         if (userRepository.findByEmail(userDTO.getEmail()).isPresent()) {
-            throw new UserAlreadyExistsException("El usuario ya existe con este correo.");
+            throw new EmailAlreadyExistsException("\"El usuario ya existe con este correo.");
         }
 
         if (userRepository.findByDocumentId(userDTO.getDocumentId()).isPresent()) {
             throw new UserAlreadyExistsException("El usuario ya existe con este documento.");
+        }
+
+        if (userDTO.getBirthDate().isAfter(LocalDate.now().minusYears(18))) {
+            throw new InvalidInputException("El usuario debe ser mayor de edad.");
         }
 
         validateUser(userDTO);
@@ -71,7 +84,6 @@ public class UserServiceImpl extends UserService {
         user = userRepository.save(user);
         return userMapper.toDTO(user);
     }
-
 
 
     private void validateUser(UserDTO userDTO) {
@@ -103,13 +115,4 @@ public class UserServiceImpl extends UserService {
         return LocalDate.now().minusYears(18).isAfter(birthDate);
     }
 
-    @Override
-    protected UserRepository getUserRepository() {
-        return null;
-    }
-
-    @Override
-    protected BCryptPasswordEncoder getPasswordEncoder() {
-        return null;
-    }
 }

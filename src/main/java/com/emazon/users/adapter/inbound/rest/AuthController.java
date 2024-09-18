@@ -27,10 +27,11 @@ public class AuthController {
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody AuthRequest authRequest) {
         try {
             AuthResponse authResponse = authService.authenticate(authRequest);
-            return ResponseEntity.ok(authResponse);  // Aquí se devuelve el token
+            return ResponseEntity.ok(authResponse);
         } catch (InvalidCredentialsException | UserNotFoundException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(new AuthResponse("Error: " + e.getMessage()));
         }
     }
+
 }

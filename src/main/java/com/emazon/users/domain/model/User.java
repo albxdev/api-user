@@ -3,7 +3,6 @@ package com.emazon.users.domain.model;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.time.LocalDate;
 
@@ -38,7 +37,7 @@ public class User {
     private String password;
 
     @Setter
-    @ManyToOne(cascade = {CascadeType.MERGE})
+    @ManyToOne(cascade = {CascadeType.ALL})
     @JoinColumn(name = "id_rol", nullable = false)
     private Role role;
 
@@ -95,7 +94,10 @@ public class User {
     }
 
     public void setPassword(String password) {
-        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-        this.password = encoder.encode(password);
+        if (password == null) {
+            throw new IllegalArgumentException("password cannot be null");
+        }
+        this.password = password; // Solo asigna el valor, no codifica
     }
+
 }

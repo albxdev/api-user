@@ -1,5 +1,6 @@
 package com.emazon.users.application.service;
 
+import com.emazon.users.domain.exception.InvalidInputException;
 import com.emazon.users.domain.repository.RoleRepository;
 import com.emazon.users.application.dto.UserDTO;
 import com.emazon.users.domain.exception.UserAlreadyExistsException;
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
@@ -41,6 +43,10 @@ class UserServiceTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        // Inicializa BCryptPasswordEncoder en el contexto del test
+        bCryptPasswordEncoder = Mockito.mock(BCryptPasswordEncoder.class);
+        // Aquí se inicializa el servicio con el mock y el encoder
+        userService = new UserServiceImpl(userRepository, bCryptPasswordEncoder, userMapper, roleRepository);
     }
 
     @Test
@@ -87,16 +93,64 @@ class UserServiceTest {
         UserDTO userDTO = new UserDTO();
         userDTO.setEmail("test@example.com");
         userDTO.setDocumentId("123456789");
+        userDTO.setBirthDate(LocalDate.now().minusYears(20)); // Establece una fecha de nacimiento válida
 
-        // Simulate existing user with the same email
+        // Simula un usuario existente con el mismo email
         when(userRepository.findByEmail(any())).thenReturn(Optional.of(new User()));
 
-        // Verify the correct exception is thrown
+        // Verifica que la excepción correcta sea lanzada
         UserAlreadyExistsException thrownException = assertThrows(UserAlreadyExistsException.class, () ->
+                userService.createAuxBodegaUser(userDTO)
+        );
+
+        // Verifica que el mensaje de la excepción es el esperado
+        assertEquals("El usuario ya existe con este correo.", thrownException.getMessage());
+    }
+
+
+
+
+    @Test
+    void testCreateUser_InvalidInput() {
+        UserDTO userDTO = new UserDTO();
+        userDTO.setBirthDate(LocalDate.now()); // Fecha no válida para la edad
+
+        // Simula que el email no existe
+        when(userRepository.findByEmail(any())).thenReturn(Optional.empty());
+
+        // Verifica que se lanza la excepción de entrada inválida
+        InvalidInputException thrownException = assertThrows(InvalidInputException.class, () ->
                 userService.createUser(userDTO)
         );
 
-        // Verify the exception message is as expected
-        assertEquals("El usuario ya existe con este correo.", thrownException.getMessage());
+        // Verifica que el mensaje de la excepción sea el esperado
+        assertEquals("El usuario debe ser mayor de edad.", thrownException.getMessage());
+    }
+
+
+    @Test
+    void testAuthenticate() {
+        String email = "user@example.com";
+        String password = "password123";
+        String encodedPassword = "$2a$10$EIX9DPDOHb7G/yM8HhNGmOjETeBG/9Ir0xUJzZ4rC77chXtHb1GMK"; // Ejemplo de BCrypt password hash
+
+        User mockUser = new User();
+        mockUser.setEmail(email);
+        mockUser.setPassword(encodedPassword);
+
+        // Configuración de los mocks
+        Mockito.when(userRepository.findByEmail(email)).thenReturn(Optional.of(mockUser));
+        Mockito.when(userRepository.findByEmail("wrong@example.com")).thenReturn(Optional.empty());
+        Mockito.when(bCryptPasswordEncoder.matches(password, encodedPassword)).thenReturn(true);
+        Mockito.when(bCryptPasswordEncoder.matches("wrongpassword", encodedPassword)).thenReturn(false);
+
+        // Test para contraseña correcta
+        assertTrue(userService.authenticate(email, password));
+
+        // Test para contraseña incorrecta
+        assertFalse(userService.authenticate(email, "wrongpassword"));
+
+        // Test para email incorrecto
+        assertFalse(userService.authenticate("wrong@example.com", password));
     }
 }

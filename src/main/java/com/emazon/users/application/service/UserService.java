@@ -8,7 +8,7 @@ import com.emazon.users.domain.repository.UserRepository;
 import com.emazon.users.application.mapper.UserMapper;
 import jakarta.validation.ValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -16,18 +16,19 @@ import java.time.Period;
 import java.util.Optional;
 
 @Service
-public abstract class UserService {
+public class UserService {
 
     private final UserRepository userRepository;
-    private final BCryptPasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
 
     @Autowired
-    public UserService(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder, UserMapper userMapper) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, UserMapper userMapper) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.userMapper = userMapper;
     }
+
 
     public UserDTO createUser(UserDTO userDTO) {
         validateUser(userDTO);
@@ -52,6 +53,7 @@ public abstract class UserService {
             throw new ValidationException("User must be at least 18 years old.");
         }
 
+
         Role role = new Role("Aux_Bodega", "Auxiliary warehouse role");
 
         User user = userMapper.toEntity(userDTO);
@@ -63,13 +65,13 @@ public abstract class UserService {
         return userMapper.toDTO(savedUser);
     }
 
-    public boolean authenticate(String email, String password) {
-        Optional<User> optionalUser = userRepository.findByEmail(email);
-        if (optionalUser.isPresent()) {
-            User user = optionalUser.get();
-            return passwordEncoder.matches(password, user.getPassword());
+    public boolean authenticate(String email, String rawPassword) {
+        Optional<User> userOptional = userRepository.findByEmail(email);
+        if (userOptional.isEmpty()) {
+            return false;
         }
-        return false;
+        User user = userOptional.get();
+        return passwordEncoder.matches(rawPassword, user.getPassword());
     }
 
     private void validateUser(UserDTO userDTO) {
@@ -85,7 +87,7 @@ public abstract class UserService {
             throw new ValidationException("Identity document must be numeric.");
         }
 
-        if (isOfLegalAge(userDTO.getBirthDate())) {
+        if (!isOfLegalAge(userDTO.getBirthDate())) {
             throw new ValidationException("User must be at least 18 years old.");
         }
     }
@@ -102,11 +104,7 @@ public abstract class UserService {
         return document.matches("\\d+");
     }
 
-    private boolean isOfLegalAge(LocalDate birthDate) {
-        return Period.between(birthDate, LocalDate.now()).getYears() >= 18;
-    }
-
-    protected abstract UserRepository getUserRepository();
-
-    protected abstract BCryptPasswordEncoder getPasswordEncoder();
+        private boolean isOfLegalAge(LocalDate birthDate) {
+            return Period.between(birthDate, LocalDate.now()).getYears() >= 18;
+        }
 }
